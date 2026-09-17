@@ -70,7 +70,7 @@
     <section id="page-dashboard" style="max-width: 800px; margin: 0 auto 40px auto; display: none;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
         <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">My Events Dashboard</h2>
-        <button class="btn btn-primary" onclick="window.location.pathname = '/'">
+        <button class="btn btn-primary" onclick="history.pushState(null, '', '/create'); document.getElementById('page-dashboard').style.display='none'; document.getElementById('page-create').style.display='block';">
           + New Event
         </button>
       </div>

@@ -120,6 +120,8 @@
     } else if (path.startsWith('/event/')) {
       mode = 'guest';
       eventId = path.replace('/event/', '').trim();
+    } else if (path === '/create') {
+      mode = 'create-force';
     } else if (path.startsWith('/dashboard') || path === '/dashboard') {
       mode = 'dashboard';
     } else if (eventParam) {
@@ -130,7 +132,10 @@
     if (eventId) {
       loadEvent(eventId.toUpperCase(), mode);
     } else {
-      if (mode === 'dashboard' || (mode === 'create' && hasAnyHostKeys())) {
+      if (mode === 'create-force') {
+        // Explicit /create — always show the create form
+        showPage('create');
+      } else if (mode === 'dashboard' || (mode === 'create' && hasAnyHostKeys())) {
         // Host has events — go to dashboard by default
         history.replaceState(null, '', '/dashboard');
         showPage('dashboard');
