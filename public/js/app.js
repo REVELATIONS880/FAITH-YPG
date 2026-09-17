@@ -130,7 +130,9 @@
     if (eventId) {
       loadEvent(eventId.toUpperCase(), mode);
     } else {
-      if (mode === 'dashboard') {
+      if (mode === 'dashboard' || (mode === 'create' && hasAnyHostKeys())) {
+        // Host has events — go to dashboard by default
+        history.replaceState(null, '', '/dashboard');
         showPage('dashboard');
         renderDashboard();
       } else {
@@ -150,7 +152,7 @@
 
     if (pageName === 'create') {
       pageCreate.style.display = 'block';
-      // If user has hosted events on this device, show dashboard button
+      // If user has hosted events on this device, show back-to-dashboard button
       if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'host') {
       pageHost.style.display = 'block';
@@ -162,13 +164,14 @@
         showPage('guest');
         renderGuestPage();
       };
+      // Host gets back button to return to dashboard
       if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'guest') {
       pageGuest.style.display = 'block';
       liveIndicator.style.display = 'flex';
-      // Guests do NOT get a "Host Dashboard" button — keep it hidden
+      // Guests do NOT get any host-related buttons
       btnHeaderSwitchView.style.display = 'none';
-      if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
+      // NO back button for guests — dashboard is host-only
     } else if (pageName === 'dashboard') {
       if (pageDashboard) pageDashboard.style.display = 'block';
       if (btnHeaderBack) btnHeaderBack.style.display = 'none';
