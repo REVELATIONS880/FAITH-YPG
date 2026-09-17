@@ -96,21 +96,15 @@ body {
 .logo-icon {
   width: 42px;
   height: 42px;
+  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  font-size: 22px;
+  box-shadow: 0 0 20px var(--primary-glow);
 }
 
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 2px;
-}
 .logo-text {
   font-size: 24px;
   font-weight: 800;

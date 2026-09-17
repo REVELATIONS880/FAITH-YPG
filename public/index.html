@@ -12,12 +12,10 @@
   <!-- App Header -->
   <header class="app-header">
     <div class="header-container">
-      <a href="#" class="logo-group">
-  <div class="logo-icon">
-    <img src="logo.png" alt="Presbyterian YPG Crest" class="logo-img">
-  </div>
-  <span class="logo-text">FaithShare</span>
-</a>
+      <a href="/" class="logo-group" id="btn-home">
+        <img src="/images/logo.png" alt="FaithShare Logo" style="width: 42px; height: 42px; object-fit: contain; border-radius: 8px;">
+        <div class="logo-text">FaithShare</div>
+      </a>
       <div class="header-actions">
         <div class="live-badge" id="live-indicator" style="display: none;">
           <div class="pulse-dot"></div>
@@ -166,6 +164,9 @@
           <h1 id="guest-display-title" style="font-size: 24px; margin-bottom: 2px;">Event Title</h1>
           <div style="font-size: 13px; color: var(--text-muted);" id="guest-display-subtitle">Share your photos &amp; video clips with everyone!</div>
         </div>
+        <button class="btn btn-secondary" id="guest-btn-host-auth" style="font-size: 12px; padding: 6px 12px;">
+          👑 Host Dashboard
+        </button>
       </div>
 
       <!-- Locked Gallery Notice -->

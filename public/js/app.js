@@ -807,6 +807,11 @@
       navigator.clipboard.writeText(url).then(() => showToast('Guest upload link copied to clipboard! 📋'));
     });
 
+    const guestBtnHostAuth = document.getElementById('guest-btn-host-auth');
+    if (guestBtnHostAuth) {
+      guestBtnHostAuth.addEventListener('click', verifyAndNavigateHost);
+    }
+
     // Filter Buttons (Host & Guest)
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
