@@ -50,7 +50,6 @@
   // Page 3: Guest Mobile Upload Elements
   const guestDisplayTitle = document.getElementById('guest-display-title');
   const guestDisplaySubtitle = document.getElementById('guest-display-subtitle');
-  const guestBtnHostAuth = document.getElementById('guest-btn-host-auth');
   const guestLockedBanner = document.getElementById('guest-locked-banner');
   const guestDropZone = document.getElementById('guest-drop-zone');
   const guestFileInput = document.getElementById('guest-file-input');
@@ -151,9 +150,8 @@
     } else if (pageName === 'guest') {
       pageGuest.style.display = 'block';
       liveIndicator.style.display = 'flex';
-      btnHeaderSwitchView.style.display = 'inline-flex';
-      btnHeaderSwitchView.innerText = '👑 Host Dashboard';
-      btnHeaderSwitchView.onclick = () => verifyAndNavigateHost();
+      // Guests do NOT get a "Host Dashboard" button — keep it hidden
+      btnHeaderSwitchView.style.display = 'none';
     }
   }
 
@@ -203,6 +201,12 @@
 
       await loadMedia(eventId);
       connectSSE(eventId);
+
+      // Route guard: if targeting host mode but no hostKey, redirect to guest page
+      if (targetMode === 'host' && !hostKey) {
+        history.replaceState(null, '', `/upload/${currentEvent.id}`);
+        targetMode = 'guest';
+      }
 
       showPage(targetMode);
       if (targetMode === 'host') {
@@ -802,8 +806,6 @@
       const url = hostDisplayUploadUrl.innerText;
       navigator.clipboard.writeText(url).then(() => showToast('Guest upload link copied to clipboard! 📋'));
     });
-
-    guestBtnHostAuth.addEventListener('click', verifyAndNavigateHost);
 
     // Filter Buttons (Host & Guest)
     document.querySelectorAll('.tab-btn').forEach(btn => {
