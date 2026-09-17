@@ -415,6 +415,26 @@ const server = http.createServer((req, res) => {
     }));
   }
 
+  // GET /api/events - list all events (summary)
+  if (method === 'GET' && pathname === '/api/events') {
+    const events = getEvents();
+    const list = Object.values(events).map(ev => ({
+      id: ev.id,
+      title: ev.title,
+      createdAt: ev.createdAt,
+      expiresAt: ev.expiresAt,
+      mediaCount: (ev.media || []).length,
+      thumbnail: (ev.media && ev.media[0]) ? ev.media[0].url : null,
+      isLocked: ev.isLocked || false
+    }));
+
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    });
+    return res.end(JSON.stringify({ events: list }));
+  }
+
   // POST /api/events/:id/verify-host
   const matchVerifyHost = pathname.match(/^\/api\/events\/([A-Za-z0-9]+)\/verify-host$/);
   if (method === 'POST' && matchVerifyHost) {

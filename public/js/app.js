@@ -191,76 +191,123 @@
     return false;
   }
 
-  // Render dashboard listing local host events (from localStorage hostKey_...)
+  // Helper to get local host records
+  function getLocalEvents() {
+    try {
+      return JSON.parse(localStorage.getItem('myHostedEvents') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveLocalEvent(ev) {
+    const list = getLocalEvents();
+    const existingIndex = list.findIndex(item => item.id === ev.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...ev };
+    } else {
+      list.unshift(ev);
+    }
+    localStorage.setItem('myHostedEvents', JSON.stringify(list));
+  }
+
+  // Render dashboard listing local host events
   async function renderDashboard() {
     if (!pageDashboard) return;
     const listEl = document.getElementById('dashboard-list');
     const emptyEl = document.getElementById('dashboard-empty');
+    if (!listEl) return;
     listEl.innerHTML = '';
-    // Fetch all events from server and mark which are local (have hostKey stored)
+
+    // Collect host event IDs from localStorage
     const hostIds = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k && k.startsWith('hostKey_')) hostIds.push(k.replace('hostKey_', ''));
     }
 
+    const localSaved = getLocalEvents();
+    localSaved.forEach(ev => {
+      if (!hostIds.includes(ev.id)) hostIds.push(ev.id);
+    });
+
     let remoteEvents = [];
     try {
-      const res = await fetch('/api/events');
+      const res = await fetch(`/api/events?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         remoteEvents = data.events || [];
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Could not fetch remote events list', e);
+    }
+
+    // Merge remote events with locally cached events
+    const eventMap = new Map();
+    localSaved.forEach(ev => eventMap.set(ev.id, { ...ev, isLocal: true }));
+    remoteEvents.forEach(ev => {
+      const isLocal = hostIds.includes(ev.id);
+      const existing = eventMap.get(ev.id) || {};
+      eventMap.set(ev.id, { ...existing, ...ev, isLocal: isLocal || existing.isLocal });
+    });
+
+    let allEvents = Array.from(eventMap.values());
 
     // Apply search filter
     const q = (dashboardSearch && dashboardSearch.value || '').toLowerCase().trim();
     if (q) {
-      remoteEvents = remoteEvents.filter(ev => (ev.title || '').toLowerCase().includes(q) || ev.id.toLowerCase().includes(q));
+      allEvents = allEvents.filter(ev => (ev.title || '').toLowerCase().includes(q) || (ev.id || '').toLowerCase().includes(q));
     }
 
     // Apply sort
     const sortVal = (dashboardSort && dashboardSort.value) || 'newest';
-    remoteEvents.sort((a, b) => {
-      if (sortVal === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+    allEvents.sort((a, b) => {
+      if (sortVal === 'oldest') return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
       if (sortVal === 'most_media') return (b.mediaCount || 0) - (a.mediaCount || 0);
       if (sortVal === 'local_first') {
-        const la = hostIds.includes(a.id) ? 0 : 1;
-        const lb = hostIds.includes(b.id) ? 0 : 1;
+        const la = a.isLocal ? 0 : 1;
+        const lb = b.isLocal ? 0 : 1;
         if (la !== lb) return la - lb;
       }
-      return new Date(b.createdAt) - new Date(a.createdAt);
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
-    if (remoteEvents.length === 0) {
-      emptyEl.style.display = 'block';
+    if (allEvents.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
       return;
     }
-    emptyEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
 
-    remoteEvents.forEach(ev => {
-      const isLocal = hostIds.includes(ev.id);
+    allEvents.forEach(ev => {
+      const isLocal = !!ev.isLocal;
 
       const card = document.createElement('div');
-      card.className = 'hero-card';
-      card.style.padding = '10px';
+      card.style.background = '#ffffff';
+      card.style.border = '1px solid var(--glass-border)';
+      card.style.borderRadius = 'var(--radius-md)';
+      card.style.padding = '20px 24px';
+      card.style.boxShadow = 'var(--shadow-main)';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.gap = '14px';
 
       const topRow = document.createElement('div');
       topRow.style.display = 'flex';
-      topRow.style.gap = '12px';
+      topRow.style.gap = '16px';
       topRow.style.alignItems = 'center';
 
       // Thumbnail
       const thumbBox = document.createElement('div');
-      thumbBox.style.width = '84px';
-      thumbBox.style.height = '64px';
-      thumbBox.style.flex = '0 0 84px';
-      thumbBox.style.borderRadius = '8px';
+      thumbBox.style.width = '70px';
+      thumbBox.style.height = '70px';
+      thumbBox.style.flex = '0 0 70px';
+      thumbBox.style.borderRadius = '12px';
       thumbBox.style.overflow = 'hidden';
-      thumbBox.style.background = 'rgba(255,255,255,0.03)';
+      thumbBox.style.background = '#f0f4f8';
       thumbBox.style.display = 'flex';
       thumbBox.style.alignItems = 'center';
       thumbBox.style.justifyContent = 'center';
+      thumbBox.style.border = '1px solid var(--glass-border)';
 
       if (ev.thumbnail) {
         const img = document.createElement('img');
@@ -271,26 +318,50 @@
         thumbBox.appendChild(img);
       } else {
         const placeholder = document.createElement('div');
-        placeholder.style.fontSize = '12px';
-        placeholder.style.color = 'var(--text-muted)';
-        placeholder.innerText = ev.id;
+        placeholder.style.fontSize = '24px';
+        placeholder.innerText = '📸';
         thumbBox.appendChild(placeholder);
       }
 
       const metaWrap = document.createElement('div');
       metaWrap.style.flex = '1';
 
+      const titleRow = document.createElement('div');
+      titleRow.style.display = 'flex';
+      titleRow.style.alignItems = 'center';
+      titleRow.style.gap = '8px';
+      titleRow.style.flexWrap = 'wrap';
+      titleRow.style.marginBottom = '4px';
+
       const title = document.createElement('div');
       title.style.fontWeight = '800';
-      title.style.fontSize = '16px';
-      title.innerText = ev.title || ev.id;
+      title.style.fontSize = '18px';
+      title.style.color = 'var(--text-main)';
+      title.innerText = ev.title || `Event #${ev.id}`;
+
+      titleRow.appendChild(title);
+
+      if (isLocal) {
+        const badge = document.createElement('span');
+        badge.className = 'meta-pill';
+        badge.style.fontSize = '11px';
+        badge.style.padding = '2px 8px';
+        badge.style.background = 'rgba(0, 35, 149, 0.08)';
+        badge.style.borderColor = 'var(--primary)';
+        badge.style.color = 'var(--primary)';
+        badge.style.fontWeight = '700';
+        badge.innerText = '👑 Your Event';
+        titleRow.appendChild(badge);
+      }
 
       const meta = document.createElement('div');
       meta.style.color = 'var(--text-muted)';
       meta.style.fontSize = '13px';
-      meta.innerText = `${ev.id} • ${ev.mediaCount || 0} file(s)`;
+      const fileCountText = `${ev.mediaCount || 0} file${(ev.mediaCount === 1) ? '' : 's'}`;
+      const dateText = ev.createdAt ? new Date(ev.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      meta.innerText = `Code: ${ev.id} • ${fileCountText} ${dateText ? '• ' + dateText : ''}`;
 
-      metaWrap.appendChild(title);
+      metaWrap.appendChild(titleRow);
       metaWrap.appendChild(meta);
 
       topRow.appendChild(thumbBox);
@@ -299,43 +370,58 @@
       const btnRow = document.createElement('div');
       btnRow.style.display = 'flex';
       btnRow.style.gap = '8px';
-      btnRow.style.marginTop = '10px';
+      btnRow.style.flexWrap = 'wrap';
 
-      const openHost = document.createElement('button');
-      openHost.className = isLocal ? 'btn btn-primary' : 'btn btn-secondary';
-      openHost.innerText = isLocal ? 'Open Host Dashboard' : 'Open Guest Page';
-      openHost.onclick = () => {
-        if (isLocal) {
+      if (isLocal) {
+        const openHost = document.createElement('button');
+        openHost.className = 'btn btn-primary';
+        openHost.style.padding = '8px 16px';
+        openHost.style.fontSize = '13px';
+        openHost.innerText = '👑 Host Dashboard';
+        openHost.onclick = () => {
           const key = localStorage.getItem(`hostKey_${ev.id}`);
           hostKey = key;
           history.pushState(null, '', `/host/${ev.id}`);
           loadEvent(ev.id, 'host');
-        } else {
-          history.pushState(null, '', `/upload/${ev.id}`);
-          loadEvent(ev.id, 'guest');
-        }
-      };
+        };
+        btnRow.appendChild(openHost);
+      }
 
       const openGuest = document.createElement('button');
       openGuest.className = 'btn btn-secondary';
-      openGuest.innerText = 'Open Guest Page';
+      openGuest.style.padding = '8px 16px';
+      openGuest.style.fontSize = '13px';
+      openGuest.innerText = '📱 Guest Upload';
       openGuest.onclick = () => {
         history.pushState(null, '', `/upload/${ev.id}`);
         loadEvent(ev.id, 'guest');
       };
-
-      btnRow.appendChild(openHost);
       btnRow.appendChild(openGuest);
 
-      // Remove from device button
+      const copyLink = document.createElement('button');
+      copyLink.className = 'btn btn-secondary';
+      copyLink.style.padding = '8px 14px';
+      copyLink.style.fontSize = '13px';
+      copyLink.innerText = '📋 Copy Link';
+      copyLink.onclick = () => {
+        const url = `${window.location.origin}/upload/${ev.id}`;
+        navigator.clipboard.writeText(url).then(() => showToast(`Upload link for ${ev.title || ev.id} copied! 📋`));
+      };
+      btnRow.appendChild(copyLink);
+
       if (isLocal) {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-danger';
-        removeBtn.innerText = 'Remove from Device';
+        removeBtn.style.padding = '8px 14px';
+        removeBtn.style.fontSize = '13px';
+        removeBtn.innerText = '🗑️ Forget';
+        removeBtn.title = 'Remove host key from this browser';
         removeBtn.onclick = (e) => {
           e.stopPropagation();
           localStorage.removeItem(`hostKey_${ev.id}`);
-          showToast('Removed host key from this device');
+          const cur = getLocalEvents().filter(item => item.id !== ev.id);
+          localStorage.setItem('myHostedEvents', JSON.stringify(cur));
+          showToast('Removed from this device');
           renderDashboard();
         };
         btnRow.appendChild(removeBtn);
@@ -366,6 +452,15 @@
         if (data.event.hostKey) {
           localStorage.setItem(`hostKey_${data.event.id}`, data.event.hostKey);
         }
+        saveLocalEvent({
+          id: data.event.id,
+          title: data.event.title,
+          createdAt: data.event.createdAt,
+          expiresAt: data.event.expiresAt,
+          hostKey: data.event.hostKey,
+          mediaCount: 0
+        });
+
         showToast('Event created successfully! Launching Host Dashboard... 🎉');
         history.pushState(null, '', `/host/${data.event.id}`);
         loadEvent(data.event.id, 'host');
@@ -982,7 +1077,22 @@
     if (btnHome) {
       btnHome.addEventListener('click', (e) => {
         e.preventDefault();
-        history.pushState(null, '', '/');
+        if (hasAnyHostKeys()) {
+          history.pushState(null, '', '/dashboard');
+          showPage('dashboard');
+          renderDashboard();
+        } else {
+          history.pushState(null, '', '/');
+          showPage('create');
+        }
+      });
+    }
+
+    const btnNewEvent = document.getElementById('btn-new-event');
+    if (btnNewEvent) {
+      btnNewEvent.addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState(null, '', '/create');
         showPage('create');
       });
     }
