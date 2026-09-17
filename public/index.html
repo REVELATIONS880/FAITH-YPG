@@ -17,6 +17,9 @@
         <div class="logo-text">FaithShare</div>
       </a>
       <div class="header-actions">
+        <button class="btn btn-secondary" id="btn-header-back" style="display: none; font-size: 13px;">
+          ⬅️ Back
+        </button>
         <div class="live-badge" id="live-indicator" style="display: none;">
           <div class="pulse-dot"></div>
           <span>LIVE</span>
@@ -62,6 +65,35 @@
           🚀 Create Event & Launch Dashboard
         </button>
       </form>
+    </section>
+
+    <section id="page-dashboard" style="max-width: 800px; margin: 0 auto 40px auto; display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main);">My Events Dashboard</h2>
+        <button class="btn btn-primary" onclick="window.location.pathname = '/'">
+          + New Event
+        </button>
+      </div>
+      
+      <div class="action-toolbar" style="margin-bottom: 24px;">
+        <input type="text" id="dashboard-search" class="form-input" placeholder="🔍 Search events..." style="flex: 1; max-width: 300px;">
+        <select id="dashboard-sort" class="form-select" style="width: 200px;">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="most_media">Most Media</option>
+          <option value="local_first">My Events First</option>
+        </select>
+      </div>
+
+      <div id="dashboard-list" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Dynamically injected events -->
+      </div>
+      
+      <div id="dashboard-empty" class="empty-state" style="display: none; background: #ffffff; border: 1px dashed var(--glass-border); border-radius: var(--radius-lg);">
+        <div class="empty-icon">📁</div>
+        <h3>No events found</h3>
+        <p>You haven't created any events yet, or none match your search.</p>
+      </div>
     </section>
 
     <!-- PAGE 2: HOST DASHBOARD PAGE (/host/CODE) -->
