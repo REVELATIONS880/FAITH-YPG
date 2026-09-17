@@ -1,0 +1,6 @@
+data/events.json
+uploads/*
+!uploads/.gitkeep
+bin/*
+node_modules/
+.DS_Store
