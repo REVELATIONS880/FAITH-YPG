@@ -7,17 +7,17 @@
   --bg-card: #ffffff;
   --bg-card-hover: #f8fafc;
   --glass-border: #e2e8f0;
-  --glass-border-glow: rgba(0, 31, 142, 0.2);
+  --glass-border-glow: rgba(0, 35, 149, 0.2);
   
-  --primary: #001f8e;
-  --primary-glow: rgba(0, 31, 142, 0.3);
+  --primary: #002395;
+  --primary-glow: rgba(0, 35, 149, 0.4);
   --secondary: #ffb800;
-  --accent-purple: #001f8e;
+  --accent-purple: #002395;
   --accent-pink: #ffb800;
   --accent-emerald: #10b981;
   --danger: #ef4444;
   
-  --text-main: #001f8e;
+  --text-main: #002395;
   --text-muted: #64748b;
   --text-dim: #94a3b8;
 
@@ -25,8 +25,8 @@
   --radius-md: 16px;
   --radius-sm: 10px;
 
-  --shadow-main: 0 10px 25px rgba(0, 31, 142, 0.08);
-  --shadow-glow: 0 0 20px rgba(0, 31, 142, 0.12);
+  --shadow-main: 0 10px 25px rgba(0, 35, 149, 0.4);
+  --shadow-glow: 0 10px 25px rgba(0, 35, 149, 0.4);
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -275,7 +275,6 @@ body {
 /* Event Dashboard / Header Banner */
 .event-banner {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 28px 32px;
@@ -285,6 +284,7 @@ body {
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
+  box-shadow: var(--shadow-main);
 }
 
 .event-info h1 {
@@ -303,17 +303,17 @@ body {
 }
 
 .meta-pill {
-  background: rgba(0, 31, 142, 0.05);
+  background: rgba(0, 35, 149, 0.05);
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(0, 31, 142, 0.1);
+  border: 1px solid rgba(0, 35, 149, 0.1);
   color: var(--text-main);
 }
 
 .meta-pill.expiry {
   color: var(--primary);
-  border-color: rgba(0, 31, 142, 0.2);
-  background: rgba(0, 31, 142, 0.08);
+  border-color: rgba(0, 35, 149, 0.2);
+  background: rgba(0, 35, 149, 0.08);
 }
 
 /* Host Controls & Actions Bar */
@@ -409,7 +409,7 @@ body {
 /* Guest Upload Drawer & Card */
 .upload-card {
   background: #ffffff;
-  border: 2px dashed rgba(0, 31, 142, 0.3);
+  border: 2px dashed rgba(0, 35, 149, 0.3);
   border-radius: var(--radius-lg);
   padding: 36px 24px;
   text-align: center;
@@ -421,7 +421,7 @@ body {
 
 .upload-card:hover, .upload-card.dragover {
   border-color: var(--primary);
-  background: rgba(0, 31, 142, 0.02);
+  background: rgba(0, 35, 149, 0.02);
   box-shadow: 0 0 20px var(--primary-glow);
 }
 
@@ -499,8 +499,8 @@ body {
 
 .gallery-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(0, 31, 142, 0.4);
-  box-shadow: 0 12px 30px rgba(0, 31, 142, 0.15);
+  border-color: rgba(0, 35, 149, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 35, 149, 0.15);
 }
 
 .media-thumbnail {
@@ -625,7 +625,7 @@ body {
   max-height: 72vh;
   object-fit: contain;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 31, 142, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 35, 149, 0.15);
 }
 
 .lightbox-details {
@@ -673,7 +673,7 @@ body {
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 8px 25px rgba(0, 31, 142, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 35, 149, 0.15);
   animation: slideUp 0.3s ease;
 }
 
@@ -703,3 +703,4 @@ body {
   .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .event-banner { padding: 18px; }
 }
+
