@@ -283,13 +283,39 @@
 
       const card = document.createElement('div');
       card.style.background = '#ffffff';
-      card.style.border = '1px solid var(--glass-border)';
+      card.style.border = '1px solid #cbd5e1';
       card.style.borderRadius = 'var(--radius-md)';
       card.style.padding = '20px 24px';
-      card.style.boxShadow = 'var(--shadow-main)';
+      card.style.boxShadow = '0 6px 20px rgba(0, 35, 149, 0.12)';
       card.style.display = 'flex';
       card.style.flexDirection = 'column';
       card.style.gap = '14px';
+      card.style.cursor = 'pointer';
+      card.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease';
+
+      card.onmouseenter = () => {
+        card.style.transform = 'translateY(-2px)';
+        card.style.boxShadow = '0 10px 28px rgba(0, 35, 149, 0.22)';
+        card.style.borderColor = 'var(--primary)';
+      };
+      card.onmouseleave = () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = '0 6px 20px rgba(0, 35, 149, 0.12)';
+        card.style.borderColor = '#cbd5e1';
+      };
+
+      // Click card to open event
+      card.onclick = () => {
+        if (isLocal) {
+          const key = localStorage.getItem(`hostKey_${ev.id}`);
+          hostKey = key;
+          history.pushState(null, '', `/host/${ev.id}`);
+          loadEvent(ev.id, 'host');
+        } else {
+          history.pushState(null, '', `/upload/${ev.id}`);
+          loadEvent(ev.id, 'guest');
+        }
+      };
 
       const topRow = document.createElement('div');
       topRow.style.display = 'flex';
@@ -303,11 +329,11 @@
       thumbBox.style.flex = '0 0 70px';
       thumbBox.style.borderRadius = '12px';
       thumbBox.style.overflow = 'hidden';
-      thumbBox.style.background = '#f0f4f8';
+      thumbBox.style.background = '#f1f5f9';
       thumbBox.style.display = 'flex';
       thumbBox.style.alignItems = 'center';
       thumbBox.style.justifyContent = 'center';
-      thumbBox.style.border = '1px solid var(--glass-border)';
+      thumbBox.style.border = '1px solid #e2e8f0';
 
       if (ev.thumbnail) {
         const img = document.createElement('img');
@@ -318,7 +344,7 @@
         thumbBox.appendChild(img);
       } else {
         const placeholder = document.createElement('div');
-        placeholder.style.fontSize = '24px';
+        placeholder.style.fontSize = '26px';
         placeholder.innerText = '📸';
         thumbBox.appendChild(placeholder);
       }
@@ -331,12 +357,12 @@
       titleRow.style.alignItems = 'center';
       titleRow.style.gap = '8px';
       titleRow.style.flexWrap = 'wrap';
-      titleRow.style.marginBottom = '4px';
+      titleRow.style.marginBottom = '6px';
 
       const title = document.createElement('div');
       title.style.fontWeight = '800';
       title.style.fontSize = '18px';
-      title.style.color = 'var(--text-main)';
+      title.style.color = '#000000';
       title.innerText = ev.title || `Event #${ev.id}`;
 
       titleRow.appendChild(title);
@@ -346,17 +372,18 @@
         badge.className = 'meta-pill';
         badge.style.fontSize = '11px';
         badge.style.padding = '2px 8px';
-        badge.style.background = 'rgba(0, 35, 149, 0.08)';
+        badge.style.background = '#eef2ff';
         badge.style.borderColor = 'var(--primary)';
         badge.style.color = 'var(--primary)';
-        badge.style.fontWeight = '700';
+        badge.style.fontWeight = '800';
         badge.innerText = '👑 Your Event';
         titleRow.appendChild(badge);
       }
 
       const meta = document.createElement('div');
-      meta.style.color = 'var(--text-muted)';
-      meta.style.fontSize = '13px';
+      meta.style.color = '#334155';
+      meta.style.fontSize = '14px';
+      meta.style.fontWeight = '500';
       const fileCountText = `${ev.mediaCount || 0} file${(ev.mediaCount === 1) ? '' : 's'}`;
       const dateText = ev.createdAt ? new Date(ev.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
       meta.innerText = `Code: ${ev.id} • ${fileCountText} ${dateText ? '• ' + dateText : ''}`;
@@ -378,7 +405,8 @@
         openHost.style.padding = '8px 16px';
         openHost.style.fontSize = '13px';
         openHost.innerText = '👑 Host Dashboard';
-        openHost.onclick = () => {
+        openHost.onclick = (e) => {
+          e.stopPropagation();
           const key = localStorage.getItem(`hostKey_${ev.id}`);
           hostKey = key;
           history.pushState(null, '', `/host/${ev.id}`);
@@ -392,7 +420,8 @@
       openGuest.style.padding = '8px 16px';
       openGuest.style.fontSize = '13px';
       openGuest.innerText = '📱 Guest Upload';
-      openGuest.onclick = () => {
+      openGuest.onclick = (e) => {
+        e.stopPropagation();
         history.pushState(null, '', `/upload/${ev.id}`);
         loadEvent(ev.id, 'guest');
       };
@@ -403,7 +432,8 @@
       copyLink.style.padding = '8px 14px';
       copyLink.style.fontSize = '13px';
       copyLink.innerText = '📋 Copy Link';
-      copyLink.onclick = () => {
+      copyLink.onclick = (e) => {
+        e.stopPropagation();
         const url = `${window.location.origin}/upload/${ev.id}`;
         navigator.clipboard.writeText(url).then(() => showToast(`Upload link for ${ev.title || ev.id} copied! 📋`));
       };
