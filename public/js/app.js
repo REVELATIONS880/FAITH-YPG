@@ -20,8 +20,12 @@
   const pageCreate = document.getElementById('page-create');
   const pageHost = document.getElementById('page-host');
   const pageGuest = document.getElementById('page-guest');
+  const pageDashboard = document.getElementById('page-dashboard');
+  const dashboardSearch = document.getElementById('dashboard-search');
+  const dashboardSort = document.getElementById('dashboard-sort');
   const liveIndicator = document.getElementById('live-indicator');
   const btnHeaderSwitchView = document.getElementById('btn-header-switch-view');
+  const btnHeaderBack = document.getElementById('btn-header-back');
 
   // Page 1: Create Form
   const formCreateEvent = document.getElementById('form-create-event');
@@ -116,6 +120,8 @@
     } else if (path.startsWith('/event/')) {
       mode = 'guest';
       eventId = path.replace('/event/', '').trim();
+    } else if (path.startsWith('/dashboard') || path === '/dashboard') {
+      mode = 'dashboard';
     } else if (eventParam) {
       mode = 'guest';
       eventId = eventParam.trim();
@@ -124,7 +130,12 @@
     if (eventId) {
       loadEvent(eventId.toUpperCase(), mode);
     } else {
-      showPage('create');
+      if (mode === 'dashboard') {
+        showPage('dashboard');
+        renderDashboard();
+      } else {
+        showPage('create');
+      }
     }
   }
 
@@ -132,11 +143,15 @@
     pageCreate.style.display = 'none';
     pageHost.style.display = 'none';
     pageGuest.style.display = 'none';
+    if (pageDashboard) pageDashboard.style.display = 'none';
     liveIndicator.style.display = 'none';
     btnHeaderSwitchView.style.display = 'none';
+    if (btnHeaderBack) btnHeaderBack.style.display = 'none';
 
     if (pageName === 'create') {
       pageCreate.style.display = 'block';
+      // If user has hosted events on this device, show dashboard button
+      if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'host') {
       pageHost.style.display = 'block';
       liveIndicator.style.display = 'flex';
@@ -147,12 +162,181 @@
         showPage('guest');
         renderGuestPage();
       };
+      if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'guest') {
       pageGuest.style.display = 'block';
       liveIndicator.style.display = 'flex';
       // Guests do NOT get a "Host Dashboard" button — keep it hidden
       btnHeaderSwitchView.style.display = 'none';
+      if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
+    } else if (pageName === 'dashboard') {
+      if (pageDashboard) pageDashboard.style.display = 'block';
+      if (btnHeaderBack) btnHeaderBack.style.display = 'none';
     }
+  }
+
+  function hasAnyHostKeys() {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('hostKey_')) return true;
+    }
+    return false;
+  }
+
+  // Render dashboard listing local host events (from localStorage hostKey_...)
+  async function renderDashboard() {
+    if (!pageDashboard) return;
+    const listEl = document.getElementById('dashboard-list');
+    const emptyEl = document.getElementById('dashboard-empty');
+    listEl.innerHTML = '';
+    // Fetch all events from server and mark which are local (have hostKey stored)
+    const hostIds = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('hostKey_')) hostIds.push(k.replace('hostKey_', ''));
+    }
+
+    let remoteEvents = [];
+    try {
+      const res = await fetch('/api/events');
+      if (res.ok) {
+        const data = await res.json();
+        remoteEvents = data.events || [];
+      }
+    } catch (e) {}
+
+    // Apply search filter
+    const q = (dashboardSearch && dashboardSearch.value || '').toLowerCase().trim();
+    if (q) {
+      remoteEvents = remoteEvents.filter(ev => (ev.title || '').toLowerCase().includes(q) || ev.id.toLowerCase().includes(q));
+    }
+
+    // Apply sort
+    const sortVal = (dashboardSort && dashboardSort.value) || 'newest';
+    remoteEvents.sort((a, b) => {
+      if (sortVal === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortVal === 'most_media') return (b.mediaCount || 0) - (a.mediaCount || 0);
+      if (sortVal === 'local_first') {
+        const la = hostIds.includes(a.id) ? 0 : 1;
+        const lb = hostIds.includes(b.id) ? 0 : 1;
+        if (la !== lb) return la - lb;
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    if (remoteEvents.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    remoteEvents.forEach(ev => {
+      const isLocal = hostIds.includes(ev.id);
+
+      const card = document.createElement('div');
+      card.className = 'hero-card';
+      card.style.padding = '10px';
+
+      const topRow = document.createElement('div');
+      topRow.style.display = 'flex';
+      topRow.style.gap = '12px';
+      topRow.style.alignItems = 'center';
+
+      // Thumbnail
+      const thumbBox = document.createElement('div');
+      thumbBox.style.width = '84px';
+      thumbBox.style.height = '64px';
+      thumbBox.style.flex = '0 0 84px';
+      thumbBox.style.borderRadius = '8px';
+      thumbBox.style.overflow = 'hidden';
+      thumbBox.style.background = 'rgba(255,255,255,0.03)';
+      thumbBox.style.display = 'flex';
+      thumbBox.style.alignItems = 'center';
+      thumbBox.style.justifyContent = 'center';
+
+      if (ev.thumbnail) {
+        const img = document.createElement('img');
+        img.src = ev.thumbnail;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        thumbBox.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.style.fontSize = '12px';
+        placeholder.style.color = 'var(--text-muted)';
+        placeholder.innerText = ev.id;
+        thumbBox.appendChild(placeholder);
+      }
+
+      const metaWrap = document.createElement('div');
+      metaWrap.style.flex = '1';
+
+      const title = document.createElement('div');
+      title.style.fontWeight = '800';
+      title.style.fontSize = '16px';
+      title.innerText = ev.title || ev.id;
+
+      const meta = document.createElement('div');
+      meta.style.color = 'var(--text-muted)';
+      meta.style.fontSize = '13px';
+      meta.innerText = `${ev.id} • ${ev.mediaCount || 0} file(s)`;
+
+      metaWrap.appendChild(title);
+      metaWrap.appendChild(meta);
+
+      topRow.appendChild(thumbBox);
+      topRow.appendChild(metaWrap);
+
+      const btnRow = document.createElement('div');
+      btnRow.style.display = 'flex';
+      btnRow.style.gap = '8px';
+      btnRow.style.marginTop = '10px';
+
+      const openHost = document.createElement('button');
+      openHost.className = isLocal ? 'btn btn-primary' : 'btn btn-secondary';
+      openHost.innerText = isLocal ? 'Open Host Dashboard' : 'Open Guest Page';
+      openHost.onclick = () => {
+        if (isLocal) {
+          const key = localStorage.getItem(`hostKey_${ev.id}`);
+          hostKey = key;
+          history.pushState(null, '', `/host/${ev.id}`);
+          loadEvent(ev.id, 'host');
+        } else {
+          history.pushState(null, '', `/upload/${ev.id}`);
+          loadEvent(ev.id, 'guest');
+        }
+      };
+
+      const openGuest = document.createElement('button');
+      openGuest.className = 'btn btn-secondary';
+      openGuest.innerText = 'Open Guest Page';
+      openGuest.onclick = () => {
+        history.pushState(null, '', `/upload/${ev.id}`);
+        loadEvent(ev.id, 'guest');
+      };
+
+      btnRow.appendChild(openHost);
+      btnRow.appendChild(openGuest);
+
+      // Remove from device button
+      if (isLocal) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn btn-danger';
+        removeBtn.innerText = 'Remove from Device';
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          localStorage.removeItem(`hostKey_${ev.id}`);
+          showToast('Removed host key from this device');
+          renderDashboard();
+        };
+        btnRow.appendChild(removeBtn);
+      }
+
+      card.appendChild(topRow);
+      card.appendChild(btnRow);
+      listEl.appendChild(card);
+    });
   }
 
   // --- CREATE EVENT FORM ---
@@ -786,11 +970,30 @@
 
   // --- SETUP LISTENERS ---
   function setupEventListeners() {
-    document.getElementById('btn-home').addEventListener('click', (e) => {
-      e.preventDefault();
-      history.pushState(null, '', '/');
-      showPage('create');
-    });
+    const btnHome = document.getElementById('btn-home');
+    if (btnHome) {
+      btnHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState(null, '', '/');
+        showPage('create');
+      });
+    }
+
+    if (btnHeaderBack) {
+      btnHeaderBack.addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState(null, '', '/dashboard');
+        showPage('dashboard');
+        renderDashboard();
+      });
+    }
+
+    if (dashboardSearch) {
+      dashboardSearch.addEventListener('input', () => renderDashboard());
+    }
+    if (dashboardSort) {
+      dashboardSort.addEventListener('change', () => renderDashboard());
+    }
 
     hostBtnDownloadQr.addEventListener('click', () => {
       const img = hostQrcodeContainer.querySelector('img');
