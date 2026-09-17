@@ -19,6 +19,23 @@ let publicTunnelUrl = null;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
+// --- STARTUP DIAGNOSTICS (helps debug Render / cloud deployments) ---
+console.log('=== SnapShare Startup Diagnostics ===');
+console.log('NODE_ENV      :', process.env.NODE_ENV || '(not set)');
+console.log('PORT          :', process.env.PORT || '3000 (default)');
+console.log('__dirname     :', __dirname);
+console.log('PUBLIC_DIR    :', PUBLIC_DIR, '| exists:', fs.existsSync(PUBLIC_DIR));
+console.log('index.html    :', path.join(PUBLIC_DIR, 'index.html'), '| exists:', fs.existsSync(path.join(PUBLIC_DIR, 'index.html')));
+console.log('DATA_DIR      :', DATA_DIR, '| exists:', fs.existsSync(DATA_DIR));
+console.log('UPLOADS_DIR   :', UPLOADS_DIR, '| exists:', fs.existsSync(UPLOADS_DIR));
+try {
+  const pubContents = fs.readdirSync(PUBLIC_DIR);
+  console.log('public/ files :', pubContents.join(', '));
+} catch(e) {
+  console.log('public/ files : (error reading dir)', e.message);
+}
+console.log('=====================================');
+
 // SSE Clients Registry: eventId -> Set of response objects
 const sseClients = new Map();
 
@@ -780,6 +797,10 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n==================================================`);
   console.log(`🚀 SnapShare Server is active and listening!`);
   console.log(`💻 Local Host:   http://localhost:${PORT}`);
+  // On Render, RENDER_EXTERNAL_URL is automatically set
+  if (process.env.RENDER_EXTERNAL_URL) {
+    console.log(`🌍 Render URL:   ${process.env.RENDER_EXTERNAL_URL}`);
+  }
   ips.forEach(i => console.log(`📱 LAN (${i.name}): http://${i.ip}:${PORT}`));
   console.log(`==================================================\n`);
 });
