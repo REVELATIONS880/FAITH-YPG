@@ -146,6 +146,18 @@
     }
   }
 
+  function activatePage(element) {
+  if (!element) return;
+
+  element.classList.remove('page-enter');
+  element.style.display = 'block';
+
+  // Force a reflow so the animation restarts every time.
+  void element.offsetWidth;
+
+  element.classList.add('page-enter');
+}
+  
   function showPage(pageName) {
     pageCreate.style.display = 'none';
     pageHost.style.display = 'none';
@@ -156,11 +168,11 @@
     if (btnHeaderBack) btnHeaderBack.style.display = 'none';
 
     if (pageName === 'create') {
-      pageCreate.style.display = 'block';
+      activatePage(pageCreate);
       // If user has hosted events on this device, show back-to-dashboard button
       if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'host') {
-      pageHost.style.display = 'block';
+      activatePage(pageHost);
       liveIndicator.style.display = 'flex';
       btnHeaderSwitchView.style.display = 'inline-flex';
       btnHeaderSwitchView.innerText = '📱 View Guest Mobile Page';
@@ -172,13 +184,13 @@
       // Host gets back button to return to dashboard
       if (btnHeaderBack && hasAnyHostKeys()) btnHeaderBack.style.display = 'inline-flex';
     } else if (pageName === 'guest') {
-      pageGuest.style.display = 'block';
+      activatePage(pageGuest);
       liveIndicator.style.display = 'flex';
       // Guests do NOT get any host-related buttons
       btnHeaderSwitchView.style.display = 'none';
       // NO back button for guests — dashboard is host-only
     } else if (pageName === 'dashboard') {
-      if (pageDashboard) pageDashboard.style.display = 'block';
+      if (pageDashboard) activatePage(pageDashboard);
       if (btnHeaderBack) btnHeaderBack.style.display = 'none';
     }
   }
